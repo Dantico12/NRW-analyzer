@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 pandas
-openpyxl
 matplotlib
-python-multipart
+seaborn
+openpyxl
 jinja2
+plotly
