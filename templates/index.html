@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Excel Data Analyzer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css?v=1.0">
+
+    </head>
+<body>
+ <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Excel Data Analyzer</h1>
+            <p>Upload your Excel files to analyze tasks by region and generate comprehensive reports</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="upload-section glass-card" id="uploadSection">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <div class="upload-text">
+                    Drag and drop your Excel file here or click to browse
+                </div>
+                
+                <form id="uploadForm">
+                    <div class="file-input-wrapper">
+                        <input type="file" name="file" id="fileInput" accept=".xlsx,.xls" required>
+                        <i class="fas fa-file-excel"></i> Choose Excel File
+                    </div>
+                    <button type="button" class="upload-btn" id="uploadBtn" disabled>
+                        <i class="fas fa-upload"></i> Upload & Analyze
+                    </button>
+                </form>
+
+                <div class="selected-file" id="selectedFile">
+                    <i class="fas fa-file-excel"></i>
+                    <span id="fileName"></span>
+                    <span id="fileSize"></span>
+                </div>
+
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+            </div>
+
+            <!-- Data Controls -->
+            <div class="data-controls glass-card" id="dataControls">
+                <h2><i class="fas fa-sliders-h"></i> Data Analysis Controls</h2>
+                
+                <div class="control-group">
+                    <div>
+                        <label for="regionFilter">Region:</label>
+                        <select id="regionFilter">
+                            <option value="">All Regions</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="taskFilter">Task Type:</label>
+                        <select id="taskFilter">
+                            <option value="">All Tasks</option>
+                        </select>
+                    </div>
+                    
+                    <button class="refresh-btn" id="refreshData">
+                        <i class="fas fa-sync-alt"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary-section glass-card" id="summarySection">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard Summary</h2>
+                <div class="summary-grid" id="summaryGrid">
+                    <!-- Dynamic summary cards will be populated -->
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-section glass-card" id="chartsSection">
+                <h2><i class="fas fa-chart-bar"></i> Visual Analytics</h2>
+                <div class="charts-grid" id="chartsGrid">
+                    <!-- Dynamic charts will be populated -->
+                </div>
+            </div>
+
+            <!-- Analysis Section -->
+            <div class="analysis-section glass-card" id="analysisSection">
+                <h2><i class="fas fa-analytics"></i> Detailed Analysis</h2>
+                
+                <div class="analysis-tabs">
+                    <button class="tab-btn active" data-tab="regions">
+                        <i class="fas fa-map-marker-alt"></i> Regions
+                    </button>
+                    <button class="tab-btn" data-tab="tasks">
+                        <i class="fas fa-tasks"></i> Tasks
+                    </button>
+                </div>
+
+                <div class="tab-content active" id="regions-tab">
+                    <div class="region-task-grid" id="regionsAnalysis">
+                        <!-- Region data will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tasks-tab">
+                    <div id="tasksAnalysis">
+                        <!-- Task data will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table Section -->
+            <div class="data-table-section glass-card" id="dataTableSection">
+                <h2><i class="fas fa-table"></i> Data Explorer</h2>
+                
+                <div class="table-controls">
+                    <div class="table-filters">
+                        <input type="text" class="filter-input" id="searchFilter" placeholder="Search data...">
+                        <select id="columnFilter">
+                            <option value="">All Columns</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="dataTableContainer">
+                    <!-- Dynamic table will be populated -->
+                </div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="export-section glass-card" id="exportSection">
+                <h2><i class="fas fa-download"></i> Export Reports</h2>
+                <div class="export-controls">
+                    <select id="reportType">
+                        <option value="all">All Reports (Multiple sheets)</option>
+                        <option value="region">Regional Analysis Report</option>
+                        <option value="task">Task Analysis Report</option>
+                    </select>
+                    
+                    <select id="exportFormat">
+                        <option value="excel">Excel (.xlsx)</option>
+                        <option value="pdf">PDF Report</option>
+                    </select>
+                    
+                    <button class="export-btn" id="generateReport">
+                        <i class="fas fa-file-excel"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/app.js?v=1.0"></script>a
+</body>
+</html>
