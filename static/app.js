@@ -5,6 +5,344 @@ let regionsData = {};
 let tasksData = {};
 let currentCharts = [];
 
+// Enhanced Data Display Functions
+function createStyledDataTable(data, containerId, title = "Data Table") {
+    const container = document.getElementById(containerId);
+    if (!container || !data || data.length === 0) {
+        container.innerHTML = `
+            <div class="table-empty">
+                <i class="fas fa-table"></i>
+                <h3>No Data Available</h3>
+                <p>Upload an Excel file to see your data here</p>
+            </div>
+        `;
+        return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const totalRecords = data.length;
+    
+    // Create table info panel
+    const tableInfo = `
+        <div class="table-info">
+            <div class="table-info-left">
+                <span>Showing ${totalRecords} records</span>
+            </div>
+            <div class="table-info-right">
+                <span class="records-count">${totalRecords} Total</span>
+            </div>
+        </div>
+    `;
+
+    // Create table HTML
+    const tableHTML = `
+        ${tableInfo}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        ${headers.map(header => `
+                            <th class="sortable" data-column="${header}">
+                                ${formatHeaderName(header)}
+                                <i class="fas fa-sort sort-icon"></i>
+                            </th>
+                        `).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(row => `
+                        <tr>
+                            ${headers.map(header => `
+                                <td class="${getDataType(row[header])}" data-column="${header}">
+                                    ${formatCellValue(row[header])}
+                                </td>
+                            `).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    container.innerHTML = tableHTML;
+
+    // Add sorting functionality
+    addTableSorting(container);
+    
+    // Add search highlighting
+    addSearchHighlighting(container);
+}
+
+function formatHeaderName(header) {
+    return header.replace(/([A-Z])/g, ' $1')
+                 .replace(/^./, str => str.toUpperCase())
+                 .trim();
+}
+
+function getDataType(value) {
+    if (value === null || value === undefined || value === '') return 'text';
+    
+    // Check if it's a number
+    if (!isNaN(value) && !isNaN(parseFloat(value))) return 'number';
+    
+    // Check if it's a date
+    if (value instanceof Date || !isNaN(Date.parse(value))) return 'date';
+    
+    // Check if it's an email
+    if (typeof value === 'string' && value.includes('@')) return 'email';
+    
+    return 'text';
+}
+
+function formatCellValue(value) {
+    if (value === null || value === undefined || value === '') {
+        return '<span style="color: var(--text-secondary); font-style: italic;">N/A</span>';
+    }
+    
+    // Format numbers
+    if (!isNaN(value) && !isNaN(parseFloat(value))) {
+        return parseFloat(value).toLocaleString();
+    }
+    
+    // Format dates
+    if (value instanceof Date) {
+        return value.toLocaleDateString();
+    }
+    
+    // Check if string looks like a date
+    if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+        const date = new Date(value);
+        return date.toLocaleDateString();
+    }
+    
+    return value;
+}
+
+function addTableSorting(container) {
+    const headers = container.querySelectorAll('.sortable');
+    let sortDirection = {};
+    
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.getAttribute('data-column');
+            const tbody = container.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Toggle sort direction
+            sortDirection[column] = sortDirection[column] === 'asc' ? 'desc' : 'asc';
+            
+            // Remove previous sort indicators
+            headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+            
+            // Add current sort indicator
+            header.classList.add(sortDirection[column] === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aValue = a.querySelector(`[data-column="${column}"]`).textContent.trim();
+                const bValue = b.querySelector(`[data-column="${column}"]`).textContent.trim();
+                
+                // Handle different data types
+                let comparison = 0;
+                if (!isNaN(aValue) && !isNaN(bValue)) {
+                    comparison = parseFloat(aValue) - parseFloat(bValue);
+                } else if (!isNaN(Date.parse(aValue)) && !isNaN(Date.parse(bValue))) {
+                    comparison = new Date(aValue) - new Date(bValue);
+                } else {
+                    comparison = aValue.localeCompare(bValue);
+                }
+                
+                return sortDirection[column] === 'asc' ? comparison : -comparison;
+            });
+            
+            // Re-append sorted rows
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+}
+
+function addSearchHighlighting(container) {
+    const searchInput = document.getElementById('searchFilter');
+    if (!searchInput) return;
+    
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = container.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            let found = false;
+            
+            cells.forEach(cell => {
+                const originalText = cell.getAttribute('data-original') || cell.textContent;
+                cell.setAttribute('data-original', originalText);
+                
+                if (searchTerm && originalText.toLowerCase().includes(searchTerm)) {
+                    found = true;
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    cell.innerHTML = originalText.replace(regex, '<span class="search-highlight">$1</span>');
+                } else {
+                    cell.innerHTML = originalText;
+                }
+            });
+            
+            row.style.display = found || !searchTerm ? '' : 'none';
+        });
+    });
+}
+
+function createRegionAnalysis(data, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || !data || data.length === 0) return;
+    
+    // Group data by region
+    const regionData = {};
+    data.forEach(item => {
+        const region = item.Region || item.region || 'Unknown';
+        if (!regionData[region]) {
+            regionData[region] = {
+                total: 0,
+                completed: 0,
+                pending: 0,
+                urgent: 0,
+                tasks: []
+            };
+        }
+        regionData[region].total++;
+        regionData[region].tasks.push(item);
+        
+        // Categorize by status if available
+        const status = (item.Status || item.status || '').toLowerCase();
+        if (status.includes('complete')) regionData[region].completed++;
+        else if (status.includes('urgent')) regionData[region].urgent++;
+        else regionData[region].pending++;
+    });
+    
+    // Create region cards
+    const regionsHTML = Object.entries(regionData).map(([region, stats]) => `
+        <div class="region-card">
+            <h3><i class="fas fa-map-marker-alt"></i> ${region}</h3>
+            <div class="region-stats">
+                <div class="stat-item">
+                    <span class="value">${stats.total}</span>
+                    <span class="label">Total Tasks</span>
+                </div>
+                <div class="stat-item">
+                    <span class="value">${stats.completed}</span>
+                    <span class="label">Completed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="value">${stats.pending}</span>
+                    <span class="label">Pending</span>
+                </div>
+                <div class="stat-item">
+                    <span class="value">${stats.urgent}</span>
+                    <span class="label">Urgent</span>
+                </div>
+            </div>
+            <div class="completion-bar">
+                <div class="completion-fill" style="width: ${(stats.completed / stats.total) * 100}%"></div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = regionsHTML;
+}
+
+function createTaskAnalysis(data, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || !data || data.length === 0) return;
+    
+    // Group data by task type
+    const taskData = {};
+    data.forEach(item => {
+        const task = item.Task || item.task || item.TaskType || 'Unknown';
+        if (!taskData[task]) {
+            taskData[task] = {
+                count: 0,
+                regions: new Set(),
+                statuses: {},
+                items: []
+            };
+        }
+        taskData[task].count++;
+        taskData[task].regions.add(item.Region || item.region || 'Unknown');
+        taskData[task].items.push(item);
+        
+        const status = item.Status || item.status || 'Unknown';
+        taskData[task].statuses[status] = (taskData[task].statuses[status] || 0) + 1;
+    });
+    
+    // Create task list
+    const tasksHTML = Object.entries(taskData).map(([task, stats]) => `
+        <div class="task-item">
+            <div class="task-header">
+                <div class="task-name">
+                    <i class="fas fa-tasks"></i> ${task}
+                </div>
+                <div class="task-count">${stats.count}</div>
+            </div>
+            <div class="task-details">
+                <div class="task-detail">
+                    <i class="fas fa-globe"></i>
+                    <span>${stats.regions.size} Region${stats.regions.size > 1 ? 's' : ''}</span>
+                </div>
+                <div class="task-detail">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>${Object.keys(stats.statuses).length} Status Types</span>
+                </div>
+                <div class="task-detail">
+                    <i class="fas fa-percentage"></i>
+                    <span>${((stats.count / data.length) * 100).toFixed(1)}% of Total</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = `<div class="task-list">${tasksHTML}</div>`;
+}
+
+function updateSummaryCards(data) {
+    const summaryGrid = document.getElementById('summaryGrid');
+    if (!summaryGrid || !data || data.length === 0) return;
+    
+    const totalRecords = data.length;
+    const regions = new Set(data.map(item => item.Region || item.region)).size;
+    const tasks = new Set(data.map(item => item.Task || item.task || item.TaskType)).size;
+    const completed = data.filter(item => 
+        (item.Status || item.status || '').toLowerCase().includes('complete')
+    ).length;
+    
+    const summaryData = [
+        { title: 'Total Records', value: totalRecords, icon: 'fas fa-database', color: 'var(--neon-cyan)' },
+        { title: 'Regions', value: regions, icon: 'fas fa-map-marked-alt', color: 'var(--neon-purple)' },
+        { title: 'Task Types', value: tasks, icon: 'fas fa-tasks', color: 'var(--neon-blue)' },
+        { title: 'Completed', value: completed, icon: 'fas fa-check-circle', color: 'var(--success-color)' }
+    ];
+    
+    summaryGrid.innerHTML = summaryData.map(item => `
+        <div class="summary-card">
+            <i class="${item.icon}" style="color: ${item.color}; font-size: 2rem; margin-bottom: 0.5rem;"></i>
+            <h3>${item.value}</h3>
+            <p>${item.title}</p>
+        </div>
+    `).join('');
+}
+
+function showLoadingState(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="table-loading">
+            <i class="fas fa-spinner loading-spinner"></i>
+            <h3>Processing Data...</h3>
+            <p>Please wait while we analyze your data</p>
+        </div>
+    `;
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
@@ -31,10 +369,6 @@ function initializeEventListeners() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', handleTabClick);
     });
-
-    // Table handlers
-    document.getElementById('searchFilter').addEventListener('input', filterTable);
-    document.getElementById('columnFilter').addEventListener('change', filterTable);
 
     // Export handlers
     document.getElementById('generateReport').addEventListener('click', generateReport);
@@ -240,7 +574,7 @@ function initializeAnimations() {
             display: inline-block;
             width: 12px;
             height: 12px;
-            border: 2px solid #rgba(255,255,255,.3);
+            border: 2px solid rgba(255,255,255,.3);
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
@@ -343,12 +677,13 @@ function processExcelFile() {
                 showDataSections();
                 showSuccess('Data processed successfully!');
                 
-                // Update UI with processed data
-                updateSummaryCards();
+                // Update UI with processed data using enhanced functions
+                updateSummaryCards(filteredData);
                 updateCharts();
-                updateDataTable();
+                createStyledDataTable(filteredData, 'dataTableContainer');
                 populateFilterOptions();
-                updateAnalysisSections();
+                createRegionAnalysis(filteredData, 'regionsAnalysis');
+                createTaskAnalysis(filteredData, 'tasksAnalysis');
             }, 1500);
             
         } catch (error) {
@@ -463,37 +798,6 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]);
-}
-
-// Update summary cards
-function updateSummaryCards() {
-    const summaryGrid = document.getElementById('summaryGrid');
-    summaryGrid.innerHTML = '';
-    
-    // Total tasks card
-    const totalTasks = filteredData.length;
-    summaryGrid.appendChild(createSummaryCard('Total Tasks', totalTasks, 'fas fa-tasks'));
-    
-    // Total regions card
-    const totalRegions = Object.keys(regionsData).length;
-    summaryGrid.appendChild(createSummaryCard('Total Regions', totalRegions, 'fas fa-map-marker-alt'));
-    
-    // Top regions cards
-    Object.entries(regionsData).forEach(([region, data]) => {
-        summaryGrid.appendChild(createSummaryCard(region, data.count, 'fas fa-building'));
-    });
-}
-
-// Create a summary card
-function createSummaryCard(title, value, icon) {
-    const card = document.createElement('div');
-    card.className = 'summary-card';
-    card.innerHTML = `
-        <h3><i class="${icon}"></i> ${title}</h3>
-        <div class="stat-number">${value}</div>
-        <div class="stat-text">Tasks</div>
-    `;
-    return card;
 }
 
 // Update charts
@@ -631,12 +935,10 @@ function getTasksByRegionChartData() {
 function populateFilterOptions() {
     const regionFilter = document.getElementById('regionFilter');
     const taskFilter = document.getElementById('taskFilter');
-    const columnFilter = document.getElementById('columnFilter');
     
     // Clear existing options
     regionFilter.innerHTML = '<option value="">All Regions</option>';
     taskFilter.innerHTML = '<option value="">All Tasks</option>';
-    columnFilter.innerHTML = '<option value="">All Columns</option>';
     
     // Add regions
     Object.keys(regionsData).forEach(region => {
@@ -653,16 +955,6 @@ function populateFilterOptions() {
         option.textContent = task;
         taskFilter.appendChild(option);
     });
-    
-    // Add columns for table filtering
-    if (excelData.length > 0) {
-        Object.keys(excelData[0]).forEach(column => {
-            const option = document.createElement('option');
-            option.value = column;
-            option.textContent = column;
-            columnFilter.appendChild(option);
-        });
-    }
 }
 
 // Apply filters
@@ -683,86 +975,14 @@ function applyFilters() {
     // Update data for regions and tasks based on filtered data
     processData(filteredData);
     
-    // Update UI
-    updateSummaryCards();
+    // Update UI with enhanced functions
+    updateSummaryCards(filteredData);
     updateCharts();
-    updateDataTable();
-    updateAnalysisSections();
+    createStyledDataTable(filteredData, 'dataTableContainer');
+    createRegionAnalysis(filteredData, 'regionsAnalysis');
+    createTaskAnalysis(filteredData, 'tasksAnalysis');
     
     showSuccess('Filters applied successfully!');
-}
-
-// Update data table
-function updateDataTable() {
-    const tableContainer = document.getElementById('dataTableContainer');
-    tableContainer.innerHTML = '';
-    
-    if (filteredData.length === 0) {
-        tableContainer.innerHTML = '<p>No data available with current filters</p>';
-        return;
-    }
-    
-    const table = document.createElement('table');
-    table.className = 'data-table';
-    
-    // Create table header
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    
-    Object.keys(filteredData[0]).forEach(key => {
-        const th = document.createElement('th');
-        th.textContent = key;
-        headerRow.appendChild(th);
-    });
-    
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-    
-    // Create table body
-    const tbody = document.createElement('tbody');
-    
-    filteredData.forEach(row => {
-        const tr = document.createElement('tr');
-        
-        Object.values(row).forEach(value => {
-            const td = document.createElement('td');
-            td.textContent = value;
-            tr.appendChild(td);
-        });
-        
-        tbody.appendChild(tr);
-    });
-    
-    table.appendChild(tbody);
-    tableContainer.appendChild(table);
-}
-
-// Filter table
-function filterTable() {
-    const searchText = document.getElementById('searchFilter').value.toLowerCase();
-    const column = document.getElementById('columnFilter').value;
-    
-    if (!searchText) {
-        // If no search text, show all data
-        filteredData = [...excelData];
-        updateDataTable();
-        return;
-    }
-    
-    filteredData = excelData.filter(row => {
-        if (column) {
-            // Search in specific column
-            const value = row[column] ? row[column].toString().toLowerCase() : '';
-            return value.includes(searchText);
-        } else {
-            // Search in all columns
-            return Object.values(row).some(value => 
-                value && value.toString().toLowerCase().includes(searchText)
-            );
-        }
-    });
-    
-    updateDataTable();
 }
 
 // Handle tab clicks
@@ -780,66 +1000,6 @@ function handleTabClick(event) {
     // Show corresponding content
     const tabName = event.currentTarget.getAttribute('data-tab');
     document.getElementById(`${tabName}-tab`).classList.add('active');
-}
-
-// Update analysis sections
-function updateAnalysisSections() {
-    updateRegionsAnalysis();
-    updateTasksAnalysis();
-}
-
-// Update regions analysis
-function updateRegionsAnalysis() {
-    const regionsAnalysis = document.getElementById('regionsAnalysis');
-    regionsAnalysis.innerHTML = '';
-    
-    Object.entries(regionsData).forEach(([region, data]) => {
-        const card = document.createElement('div');
-        card.className = 'region-task-card';
-        
-        let tasksHtml = '';
-        Object.entries(data.tasks).forEach(([task, count]) => {
-            tasksHtml += `
-                <div class="task-item">
-                    <span>${task}</span>
-                    <span>${count}</span>
-                </div>
-            `;
-        });
-        
-        card.innerHTML = `
-            <h4>${region} (Total: ${data.count})</h4>
-            ${tasksHtml}
-        `;
-        
-        regionsAnalysis.appendChild(card);
-    });
-}
-
-// Update tasks analysis
-function updateTasksAnalysis() {
-    const tasksAnalysis = document.getElementById('tasksAnalysis');
-    tasksAnalysis.innerHTML = '';
-    
-    const taskCard = document.createElement('div');
-    taskCard.className = 'region-task-card';
-    
-    let tasksHtml = '';
-    Object.entries(tasksData).forEach(([task, count]) => {
-        tasksHtml += `
-            <div class="task-item">
-                <span>${task}</span>
-                <span>${count}</span>
-            </div>
-        `;
-    });
-    
-    taskCard.innerHTML = `
-        <h4>Task Distribution (Total: ${filteredData.length})</h4>
-        ${tasksHtml}
-    `;
-    
-    tasksAnalysis.appendChild(taskCard);
 }
 
 // Generate reports
