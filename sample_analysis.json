@@ -1,0 +1,38 @@
+{
+  "task_data": [
+    {
+      "Task_Assignment": "Meter Servicing",
+      "How_Many": 5
+    },
+    {
+      "Task_Assignment": "Leak Repair",
+      "How_Many": 2
+    },
+    {
+      "Task_Assignment": "Valve Replacement",
+      "How_Many": 2
+    },
+    {
+      "Task_Assignment": "Meter Relocation",
+      "How_Many": 1
+    }
+  ],
+  "region_data": [
+    {
+      "REGION": "Southern Region",
+      "How_Many_Tasks": 4
+    },
+    {
+      "REGION": "Northern Region",
+      "How_Many_Tasks": 3
+    },
+    {
+      "REGION": "Eastern Region",
+      "How_Many_Tasks": 2
+    },
+    {
+      "REGION": "Western Region",
+      "How_Many_Tasks": 1
+    }
+  ]
+}
