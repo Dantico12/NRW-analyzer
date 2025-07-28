@@ -3,159 +3,402 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Excel Data Analyzer</title>
+    <title>Task Analysis System</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <link rel="stylesheet" href="/static/style.css?v=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    </head>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .upload-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .file-input-label:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .selected-file {
+            background: #e8f4f8;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            color: #d8000c;
+            border-left: 4px solid #d8000c;
+        }
+
+        .success-message {
+            background: #e6ffe6;
+            color: #4f8a10;
+            border-left: 4px solid #4f8a10;
+        }
+
+        .features {
+            margin-top: 40px;
+            color: white;
+        }
+
+        .features h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .feature-card h4 {
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
 <body>
- <div class="container">
+    <div class="container">
         <div class="header">
-            <h1><i class="fas fa-chart-line"></i> Excel Data Analyzer</h1>
-            <p>Upload your Excel files to analyze tasks by region and generate comprehensive reports</p>
+            <h1><i class="fas fa-chart-line"></i> Task Analysis System</h1>
+            <p>Upload your Excel file to analyze task assignments and regional distribution</p>
         </div>
 
-        <div class="main-content">
-            <!-- Upload Section -->
-            <div class="upload-section glass-card" id="uploadSection">
-                <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                <div class="upload-text">
-                    Drag and drop your Excel file here or click to browse
-                </div>
-                
-                <form id="uploadForm">
-                    <div class="file-input-wrapper">
-                        <input type="file" name="file" id="fileInput" accept=".xlsx,.xls" required>
+        <div class="upload-card">
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <div class="upload-text">
+                Drag and drop your Excel file here or click to browse
+            </div>
+            
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" name="file" id="fileInput" accept=".xlsx,.xls" required>
+                    <label for="fileInput" class="file-input-label">
                         <i class="fas fa-file-excel"></i> Choose Excel File
-                    </div>
-                    <button type="button" class="upload-btn" id="uploadBtn" disabled>
-                        <i class="fas fa-upload"></i> Upload & Analyze
-                    </button>
-                </form>
+                    </label>
+                </div>
+                
+                <button type="submit" class="upload-btn" id="uploadBtn" disabled>
+                    <i class="fas fa-upload"></i> Upload & Analyze
+                </button>
+            </form>
 
-                <div class="selected-file" id="selectedFile">
+            <div class="selected-file" id="selectedFile">
+                <i class="fas fa-file-excel"></i>
+                <span id="fileName"></span>
+                <span id="fileSize"></span>
+            </div>
+
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="message error-message" id="errorMessage"></div>
+            <div class="message success-message" id="successMessage"></div>
+        </div>
+
+        <div class="features">
+            <h3>What This System Does</h3>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-tasks"></i>
+                    <h4>Task Assignment Analysis</h4>
+                    <p>Analyze and count different task assignments like meter servicing, showing how many of each task type</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h4>Region Analysis</h4>
+                    <p>Breakdown of tasks by region, showing distribution and counts across different geographical areas</p>
+                </div>
+                <div class="feature-card">
                     <i class="fas fa-file-excel"></i>
-                    <span id="fileName"></span>
-                    <span id="fileSize"></span>
-                </div>
-
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-
-                <div class="error-message" id="errorMessage"></div>
-                <div class="success-message" id="successMessage"></div>
-            </div>
-
-            <!-- Data Controls -->
-            <div class="data-controls glass-card" id="dataControls">
-                <h2><i class="fas fa-sliders-h"></i> Data Analysis Controls</h2>
-                
-                <div class="control-group">
-                    <div>
-                        <label for="regionFilter">Region:</label>
-                        <select id="regionFilter">
-                            <option value="">All Regions</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label for="taskFilter">Task Type:</label>
-                        <select id="taskFilter">
-                            <option value="">All Tasks</option>
-                        </select>
-                    </div>
-                    
-                    <button class="refresh-btn" id="refreshData">
-                        <i class="fas fa-sync-alt"></i> Apply Filters
-                    </button>
-                </div>
-            </div>
-
-            <!-- Summary Section -->
-            <div class="summary-section glass-card" id="summarySection">
-                <h2><i class="fas fa-tachometer-alt"></i> Dashboard Summary</h2>
-                <div class="summary-grid" id="summaryGrid">
-                    <!-- Dynamic summary cards will be populated -->
-                </div>
-            </div>
-
-            <!-- Charts Section -->
-            <div class="charts-section glass-card" id="chartsSection">
-                <h2><i class="fas fa-chart-bar"></i> Visual Analytics</h2>
-                <div class="charts-grid" id="chartsGrid">
-                    <!-- Dynamic charts will be populated -->
-                </div>
-            </div>
-
-            <!-- Analysis Section -->
-            <div class="analysis-section glass-card" id="analysisSection">
-                <h2><i class="fas fa-analytics"></i> Detailed Analysis</h2>
-                
-                <div class="analysis-tabs">
-                    <button class="tab-btn active" data-tab="regions">
-                        <i class="fas fa-map-marker-alt"></i> Regions
-                    </button>
-                    <button class="tab-btn" data-tab="tasks">
-                        <i class="fas fa-tasks"></i> Tasks
-                    </button>
-                </div>
-
-                <div class="tab-content active" id="regions-tab">
-                    <div class="region-task-grid" id="regionsAnalysis">
-                        <!-- Region data will be populated here -->
-                    </div>
-                </div>
-                
-                <div class="tab-content" id="tasks-tab">
-                    <div id="tasksAnalysis">
-                        <!-- Task data will be populated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Data Table Section -->
-            <div class="data-table-section glass-card" id="dataTableSection">
-                <h2><i class="fas fa-table"></i> Data Explorer</h2>
-                
-                <div class="table-controls">
-                    <div class="table-filters">
-                        <input type="text" class="filter-input" id="searchFilter" placeholder="Search data...">
-                        <select id="columnFilter">
-                            <option value="">All Columns</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="dataTableContainer">
-                    <!-- Dynamic table will be populated -->
-                </div>
-            </div>
-
-            <!-- Export Section -->
-            <div class="export-section glass-card" id="exportSection">
-                <h2><i class="fas fa-download"></i> Export Reports</h2>
-                <div class="export-controls">
-                    <select id="reportType">
-                        <option value="all">All Reports (Multiple sheets)</option>
-                        <option value="region">Regional Analysis Report</option>
-                        <option value="task">Task Analysis Report</option>
-                    </select>
-                    
-                    <select id="exportFormat">
-                        <option value="excel">Excel (.xlsx)</option>
-                        <option value="pdf">PDF Report</option>
-                    </select>
-                    
-                    <button class="export-btn" id="generateReport">
-                        <i class="fas fa-file-excel"></i> Generate Report
-                    </button>
+                    <h4>Excel Reports</h4>
+                    <p>Generate comprehensive Excel reports with embedded charts for easy analysis and sharing</p>
                 </div>
             </div>
         </div>
     </div>
-    <script src="/static/app.js?v=1.0"></script>a
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const selectedFile = document.getElementById('selectedFile');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const uploadForm = document.getElementById('uploadForm');
+
+        // File input change handler
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file type
+                if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                    showError('Please select an Excel file (.xlsx or .xls)');
+                    return;
+                }
+                
+                // Validate file size (10MB limit)
+                if (file.size > 10 * 1024 * 1024) {
+                    showError('File size too large. Maximum file size is 10MB.');
+                    return;
+                }
+                
+                // Show selected file info
+                fileName.textContent = file.name;
+                fileSize.textContent = `(${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+                selectedFile.style.display = 'block';
+                uploadBtn.disabled = false;
+                clearMessages();
+            }
+        });
+
+        // Form submit handler
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const file = fileInput.files[0];
+            if (!file) {
+                showError('Please select a file first.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                progressBar.style.display = 'block';
+                
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 30;
+                    if (progress > 90) progress = 90;
+                    progressFill.style.width = progress + '%';
+                }, 500);
+                
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                
+                if (response.ok) {
+                    showSuccess('File processed successfully! Redirecting to results...');
+                    setTimeout(() => {
+                        window.location.href = response.url;
+                    }, 1500);
+                } else {
+                    const errorData = await response.json();
+                    showError(errorData.detail || 'Error processing file');
+                }
+                
+            } catch (error) {
+                showError('Network error. Please try again.');
+                console.error('Upload error:', error);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload & Analyze';
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 2000);
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function clearMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // Drag and drop functionality
+        const uploadCard = document.querySelector('.upload-card');
+
+        uploadCard.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadCard.style.background = 'rgba(255, 255, 255, 0.8)';
+        });
+
+        uploadCard.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadCard.style.background = 'rgba(255, 255, 255, 0.95)';
+        });
+
+        uploadCard.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadCard.style.background = 'rgba(255, 255, 255, 0.95)';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
 </body>
 </html>

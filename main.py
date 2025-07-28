@@ -21,8 +21,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Excel Data Analyzer",
-    description="Analyze Excel data with region and task breakdowns",
+    title="Simplified Task Analysis System",
+    description="Analyze task assignments and regions from Excel data",
     version="2.0.0"
 )
 
@@ -52,7 +52,7 @@ async def home(request: Request):
 
 @app.post("/upload")
 async def upload_file(request: Request, file: UploadFile = File(...)):
-    """Handle file upload and processing"""
+    """Handle file upload and processing - simplified without raw data confirmation"""
     try:
         # Validate file type
         if not file.filename.endswith(('.xlsx', '.xls')):
@@ -76,9 +76,9 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         
         logger.info(f"File uploaded: {file.filename}")
         
-        # Process data
+        # Process data - simplified to only get task and region data
         try:
-            region_data, task_data, service_data, charts = excel_processor.process_excel(file_path)
+            task_data, region_data, charts = excel_processor.process_excel(file_path)
         except Exception as e:
             logger.error(f"Error processing file: {str(e)}")
             raise HTTPException(
@@ -89,11 +89,10 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         # Generate unique token for this session
         token = str(uuid.uuid4())
         
-        # Store processed data
+        # Store processed data - simplified structure
         processed_data[token] = {
-            "region_data": region_data,
             "task_data": task_data,
-            "service_data": service_data,
+            "region_data": region_data,
             "charts": charts,
             "filename": file.filename,
             "upload_time": datetime.now().isoformat(),
@@ -108,7 +107,8 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         except:
             pass
         
-        return RedirectResponse(url=f"/preview?token={token}", status_code=303)
+        # Directly redirect to results (no raw data confirmation needed)
+        return RedirectResponse(url=f"/results?token={token}", status_code=303)
         
     except HTTPException:
         raise
@@ -116,27 +116,26 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         logger.error(f"Unexpected error in upload: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error during file upload")
 
-@app.get("/preview")
-async def preview_data(request: Request, token: str):
-    """Preview processed data with charts"""
+@app.get("/results")
+async def show_results(request: Request, token: str):
+    """Show analysis results with simplified task and region data"""
     data = processed_data.get(token)
     if not data:
         return RedirectResponse("/", status_code=303)
     
     try:
-        return templates.TemplateResponse("preview.html", {
+        return templates.TemplateResponse("results.html", {
             "request": request,
             "token": token,
-            "region_data": data["region_data"],
             "task_data": data["task_data"],
-            "service_data": data["service_data"],
+            "region_data": data["region_data"],
             "charts": data["charts"],
             "filename": data["filename"],
             "upload_time": data["upload_time"]
         })
     except Exception as e:
-        logger.error(f"Error in preview: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error displaying preview")
+        logger.error(f"Error in results display: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error displaying results")
 
 @app.get("/api/data/{token}")
 async def get_data_api(token: str):
@@ -146,26 +145,24 @@ async def get_data_api(token: str):
         raise HTTPException(status_code=404, detail="Data not found")
     
     return JSONResponse({
-        "region_data": data["region_data"],
         "task_data": data["task_data"],
-        "service_data": data["service_data"],
+        "region_data": data["region_data"],
         "filename": data["filename"],
         "upload_time": data["upload_time"]
     })
 
 @app.get("/download/excel/{token}")
 async def download_excel_report(token: str):
-    """Download Excel report with charts"""
+    """Download simplified Excel report with embedded charts"""
     data = processed_data.get(token)
     if not data:
         raise HTTPException(status_code=404, detail="Data not found")
     
     try:
-        # Generate Excel report
+        # Generate simplified Excel report
         report_path = report_generator.generate_excel_report(
-            data["region_data"],
             data["task_data"],
-            data["service_data"],
+            data["region_data"],
             data["filename"]
         )
         
@@ -204,9 +201,8 @@ async def regenerate_report(token: str):
     try:
         # Generate new report
         report_path = report_generator.generate_excel_report(
-            data["region_data"],
             data["task_data"],
-            data["service_data"],
+            data["region_data"],
             data["filename"]
         )
         
@@ -289,7 +285,7 @@ async def cleanup_old_data():
 @app.on_event("startup")
 async def startup_event():
     """Application startup event"""
-    logger.info("Excel Data Analyzer started")
+    logger.info("Simplified Task Analysis System started")
     logger.info(f"Static files directory: {os.path.abspath('static')}")
     logger.info(f"Templates directory: {os.path.abspath('templates')}")
     

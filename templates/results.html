@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Analysis Results</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .file-info {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background-color: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .chart-container {
+            margin: 30px 0;
+            min-height: 400px;
+        }
+
+        .download-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 40px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .download-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .download-btn:hover {
+            background: white;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: #5a6268;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .summary-card p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Task Analysis Results</h1>
+            <p>Comprehensive analysis of task assignments and regional distribution</p>
+            
+            <div class="file-info">
+                <div>
+                    <strong><i class="fas fa-file-excel"></i> File:</strong> {{ filename }}
+                </div>
+                <div>
+                    <strong><i class="fas fa-clock"></i> Processed:</strong> {{ upload_time }}
+                </div>
+                <a href="/" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Upload New File
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Overview -->
+        <div class="card">
+            <h2><i class="fas fa-tachometer-alt"></i> Summary Overview</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>{{ task_data|length }}</h3>
+                    <p>Task Types</p>
+                </div>
+                <div class="summary-card">
+                    <h3>{{ region_data|length }}</h3>
+                    <p>Regions</p>
+                </div>
+                <div class="summary-card">
+                    <h3>{{ task_data|sum(attribute='How_Many') if task_data else 0 }}</h3>
+                    <p>Total Tasks</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Assignment Analysis -->
+        <div class="card">
+            <h2><i class="fas fa-tasks"></i> Task Assignment Analysis</h2>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Task Assignment</th>
+                        <th>How Many</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_tasks = task_data|sum(attribute='How_Many') if task_data else 1 %}
+                    {% for task in task_data %}
+                    <tr>
+                        <td>{{ task.Task_Assignment }}</td>
+                        <td>{{ task.How_Many }}</td>
+                        <td>{{ "%.1f"|format((task.How_Many / total_tasks * 100)) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Task Assignment Chart -->
+            {% if charts.task_assignment_bar %}
+            <div class="chart-container">
+                <div id="taskChart"></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Region Analysis -->
+        <div class="card">
+            <h2><i class="fas fa-map-marker-alt"></i> Region Analysis</h2>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Region</th>
+                        <th>How Many Tasks</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_regional_tasks = region_data|sum(attribute='How_Many_Tasks') if region_data else 1 %}
+                    {% for region in region_data %}
+                    <tr>
+                        <td>{{ region.REGION }}</td>
+                        <td>{{ region.How_Many_Tasks }}</td>
+                        <td>{{ "%.1f"|format((region.How_Many_Tasks / total_regional_tasks * 100)) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Region Chart -->
+            {% if charts.region_bar %}
+            <div class="chart-container">
+                <div id="regionChart"></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Download Section -->
+        <div class="download-section">
+            <h2><i class="fas fa-download"></i> Download Reports</h2>
+            <p>Generate comprehensive Excel reports with embedded charts</p>
+            
+            <a href="/download/excel/{{ token }}" class="download-btn">
+                <i class="fas fa-file-excel"></i> Download Excel Report
+            </a>
+            
+            <a href="/download/charts/{{ token }}" class="download-btn">
+                <i class="fas fa-chart-bar"></i> Download Charts Data
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Render Task Assignment Chart
+        {% if charts.task_assignment_bar %}
+        var taskChartData = {{ charts.task_assignment_bar | safe }};
+        Plotly.newPlot('taskChart', taskChartData.data, taskChartData.layout, {responsive: true});
+        {% endif %}
+
+        // Render Region Chart
+        {% if charts.region_bar %}
+        var regionChartData = {{ charts.region_bar | safe }};
+        Plotly.newPlot('regionChart', regionChartData.data, regionChartData.layout, {responsive: true});
+        {% endif %}
+    </script>
+</body>
+</html>
